@@ -7,7 +7,7 @@ const Carousal = () => {
       <div className="max-w-6xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-10">
         <div className="flex-1">
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight">
-            Blog management made simple
+            Blog management system
           </h1>
           <p className="mt-4 text-gray-600 max-w-xl">
             Create, manage and publish content with a clean editor, powerful organisation tools and user roles — all in one place.
