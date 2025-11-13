@@ -5,7 +5,8 @@ import Feature from '../../../components/Features/Feature'
 import CTA from '../../../components/Cta/CTA'
 import Footer from '../../../components/Footer/Footer'
 
-//My name is krishanu
+//My name is krishanu DEY
+// whdhdgheh
 const Home = () => {
   return (
     <>
