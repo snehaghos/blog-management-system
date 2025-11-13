@@ -9,6 +9,7 @@ import Footer from '../../../components/Footer/Footer'
 // Additional comments can be added here if necessary
 // Additional comments can be added here if necessary
 // Additional comments can be added here if necessary
+// Additional comments can be added here if necessary
 const Home = () => {
   return (
     <>
