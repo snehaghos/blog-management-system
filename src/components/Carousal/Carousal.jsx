@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 const Carousal = () => {
   return (
+    //mrittikas commit
     <section className="bg-gradient-to-r from-gray-50 to-white py-20">
       <div className="max-w-6xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-10">
         <div className="flex-1">
