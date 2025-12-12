@@ -1,14 +1,26 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
+
 
 const Footer = () => (
-  <footer className="py-8 bg-white border-t">
-    <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-      <div className="text-gray-700 font-semibold">Blog Management</div>
-      <div className="text-sm text-gray-500">
-        © {new Date().getFullYear()} Blog Management — Built for creators
-      </div>
-    </div>
-  </footer>
+  <footer className="border-t border-border py-8 sm:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-muted-foreground">© 2025 BlogHub. All rights reserved.</p>
+            <div className="flex gap-6 text-sm text-muted-foreground">
+              <Link to="#" className="hover:text-foreground transition">
+                Privacy
+              </Link>
+              <Link to="#" className="hover:text-foreground transition">
+                Terms
+              </Link>
+              <Link to="#" className="hover:text-foreground transition">
+                Contact
+              </Link>
+            </div>
+          </div>
+        </div>
+      </footer>
 )
 
 export default Footer

@@ -1,58 +1,58 @@
 import React from 'react'
 
-const FeatureCard = ({ title, desc, icon }) => (
-  <div className="p-6 bg-white rounded-lg shadow-sm border">
-    <div className="h-12 w-12 flex items-center justify-center rounded-md bg-blue-50 text-blue-600">
-      {icon}
-    </div>
-    <h3 className="mt-4 text-lg font-semibold text-gray-800">{title}</h3>
-    <p className="mt-2 text-gray-600 text-sm">{desc}</p>
-  </div>
-)
+import { BookOpen, Users, TrendingUp, Share2, Lock, Zap } from 'lucide-react'
+
 
 const Feature = () => {
   return (
-    <section id="features" className="py-16 bg-gray-50">
-      <div className="max-w-6xl mx-auto px-6">
-        <h2 className="text-2xl font-bold text-gray-900">Powerful features</h2>
-        <p className="mt-2 text-gray-600 max-w-2xl">
-          Tools you need to run a professional blog — editorial workflow, roles & permissions, analytics and SEO helpers.
-        </p>
+     <section className="border-t border-border py-20 sm:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-16 text-center">Powerful tools for creators</h2>
 
-        <div className="mt-8 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <FeatureCard
-            title="Editor & Drafts"
-            desc="Rich editing experience, autosave, drafts and revision history."
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 20h9" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16.5 3.5L21 8l-9 9-4 1 1-4 9-9z" />
-              </svg>
-            }
-          />
-          <FeatureCard
-            title="Roles & Access"
-            desc="Invite team members and control what each role can do."
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14c-4.418 0-8 1.79-8 4v1h16v-1c0-2.21-3.582-4-8-4z" />
-              </svg>
-            }
-          />
-          <FeatureCard
-            title="Analytics"
-            desc="Understand traffic and engagement with simple dashboards."
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3v18h18" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17V9m6 8V5" />
-              </svg>
-            }
-          />
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: BookOpen,
+                title: "Create & Publish",
+                desc: "Write beautiful, rich posts with an intuitive editor designed for creators",
+              },
+              {
+                icon: Users,
+                title: "Build Community",
+                desc: "Engage with your audience through comments, replies, and direct interaction",
+              },
+              {
+                icon: TrendingUp,
+                title: "Advanced Analytics",
+                desc: "Track every metric that matters—views, clicks, subscribers, and revenue",
+              },
+              {
+                icon: Share2,
+                title: "Easy Distribution",
+                desc: "Publish to your website, email newsletters, and social media automatically",
+              },
+              {
+                icon: Lock,
+                title: "Memberships & Paywalls",
+                desc: "Monetize your content with flexible subscription and paywall options",
+              },
+              {
+                icon: Zap,
+                title: "Lightning Fast",
+                desc: "Optimized performance ensures your readers get the best experience",
+              },
+            ].map((feature, idx) => (
+              <div key={idx} className="group">
+                <div className="h-12 w-12 bg-linear-to-br from-primary/30 to-accent/30 rounded-lg flex items-center justify-center mb-4 group-hover:from-primary/50 group-hover:to-accent/50 transition">
+                  <feature.icon className="text-accent" size={24} />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
   )
 }
 
