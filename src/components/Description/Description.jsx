@@ -11,7 +11,7 @@ const Description = () => {
             Everything professional publishers need to succeed.
           </h2>
           <p className="text-lg text-muted-foreground text-balance leading-relaxed">
-            BlogHub is a modern publishing platform built for creators who want to build a business around their
+            MINDLOUGE is a modern publishing platform built for creators who want to build a business around their
             content. Create beautiful posts, manage your audience, track analytics, and grow your revenue—all in one
             place.
           </p>

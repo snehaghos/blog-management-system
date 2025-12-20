@@ -1,22 +1,48 @@
 "use client"
 
-import { Navbar } from "@/components/navbar"
-import { ProtectedRoute } from "@/components/protected-route"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react"
+import { Button } from "../../../components/ui/button"
 import { Heart, Eye, MessageSquare } from "lucide-react"
-import Link from "next/link"
+import axiosClient from "../../../lib/axios"
+import BlogDetailModal from "./BlogDetailModal"
+
 
 export default function UserHome() {
-  const blogs = [
-    { id: 1, title: "Getting Started with React Hooks", author: "Jane Doe", views: 1240, likes: 234, comments: 45 },
-    { id: 2, title: "Advanced TypeScript Patterns", author: "John Smith", views: 892, likes: 156, comments: 28 },
-    { id: 3, title: "Web Performance Optimization", author: "Sarah Johnson", views: 567, likes: 89, comments: 12 },
-  ]
+  const [blogs, setBlogs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selectedBlogId, setSelectedBlogId] = useState(null)
+  const [modalOpen, setModalOpen] = useState(false)
+
+  useEffect(() => {
+    fetchAllBlogs()
+  }, [])
+
+  const fetchAllBlogs = async () => {
+    try {
+      setLoading(true)
+      const response = await axiosClient.get("/api/blogs")
+      setBlogs(response.data || [])
+    } catch (error) {
+      console.error("Error fetching blogs:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleBlogClick = (blogId) => {
+    setSelectedBlogId(blogId)
+    setModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setModalOpen(false)
+    setSelectedBlogId(null)
+  }
 
   return (
-    <ProtectedRoute requiredRole="user">
+
       <div className="min-h-screen bg-background">
-        <Navbar />
+    
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="mb-12">
@@ -24,30 +50,53 @@ export default function UserHome() {
             <p className="text-xl text-muted-foreground">Explore stories from talented creators</p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {blogs.map((blog) => (
-              <Link key={blog.id} href={`/user/blog/${blog.id}`}>
-                <div className="bg-card border border-border rounded-xl overflow-hidden glass hover:border-primary/50 transition h-full flex flex-col">
-                  <div className="h-40 bg-gradient-to-br from-primary/20 to-accent/20"></div>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading blogs...</p>
+              </div>
+            </div>
+          ) : blogs.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg">No blogs available yet</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {blogs.map((blog) => (
+                <div
+                  key={blog._id}
+                  onClick={() => handleBlogClick(blog._id)}
+                  className="bg-card border border-border rounded-xl overflow-hidden glass hover:border-primary/50 transition h-full flex flex-col cursor-pointer"
+                >
+                  <div className="h-40 bg-gradient-to-br from-primary/20 to-accent/20 overflow-hidden">
+                    {blog.image && (
+                      <img
+                        src={`http://localhost:3000/uploads/${blog.image}`}
+                        alt={blog.title}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </div>
                   <div className="p-6 flex-1 flex flex-col">
                     <h3 className="text-lg font-bold mb-2 line-clamp-2">{blog.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">By {blog.author}</p>
+                    <p className="text-sm text-muted-foreground mb-4">By {blog.author?.name || "Unknown"}</p>
                     <div className="flex gap-4 mt-auto text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <Eye size={14} /> {blog.views}
+                        <Eye size={14} /> {blog.views || 0}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Heart size={14} /> {blog.likes}
+                        <Heart size={14} /> {blog.likes || 0}
                       </span>
                       <span className="flex items-center gap-1">
-                        <MessageSquare size={14} /> {blog.comments}
+                        <MessageSquare size={14} /> {blog.comments || 0}
                       </span>
                     </div>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* Featured Authors */}
           <div className="mt-20">
@@ -66,7 +115,10 @@ export default function UserHome() {
             </div>
           </div>
         </div>
+
+        {/* Blog Detail Modal */}
+        <BlogDetailModal isOpen={modalOpen} onClose={handleCloseModal} blogId={selectedBlogId} />
       </div>
-    </ProtectedRoute>
+   
   )
 }

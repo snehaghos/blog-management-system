@@ -17,36 +17,51 @@ const AuthContextProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (token) {
-      // Optionally verify token is still valid
+      
       console.log("User session found");
     }
   }, []);
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e, role) => {
     e.preventDefault();
-    if (!email || !password) {
+    if (!email || !password || !role) {
       toast.error("Please fill in all fields.");
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await axiosClient.post("/api/auth/login", { email, password });
+      const response = await axiosClient.post("/api/auth/login", { email, password, role });
       const data = response.data;
 
       // Store tokens
       localStorage.setItem("accessToken", data.accessToken);
-      if (data.refresh_token) {
-        localStorage.setItem("refreshToken", data.refresh_token);
+      if (data.refreshToken) {
+        localStorage.setItem("refreshToken", data.refreshToken);
       }
 
-      // Store user data
-      // if (data.user) {
-      //   localStorage.setItem("user", JSON.stringify(data.user));
-      // }
-
+      // Role-based redirection
+      const userRole = data.user?.role || data.role;
+      localStorage.setItem("userRole", userRole);
+      
+      // Store user object (for filtering author blogs, etc.)
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
+      
       toast.success("Login successful!");
-      navigate("/"); // Redirect to home or dashboard
+      
+      // Determine redirect path based on user role
+      let redirectPath = "/user-home";
+      if (userRole === "admin") {
+        redirectPath = "/admin-dashboard";
+      } else if (userRole === "author") {
+        redirectPath = "/author-dashboard";
+      }
+      
+      // Dispatch auth success event to trigger Router component update
+      const event = new CustomEvent('authSuccess', { detail: { redirectPath } });
+      window.dispatchEvent(event);
     } catch (error) {
       const msg = error?.response?.data?.message || "Login failed";
       toast.error(msg);
@@ -55,10 +70,10 @@ const AuthContextProvider = ({ children }) => {
     }
   };
 
-  const handleRegister = async (e) => {
+  const handleRegister = async (e, role) => {
     e.preventDefault();
 
-    if (!fullName || !email || !password || !confirmPassword) {
+    if (!fullName || !email || !password || !confirmPassword || !role) {
       toast.error("Please fill in all fields.");
       return;
     }
@@ -74,6 +89,7 @@ const AuthContextProvider = ({ children }) => {
         name: fullName,
         email,
         password,
+        role,
       });
       // Success
       toast.success("Registration successful! Please login.");
@@ -94,19 +110,23 @@ const AuthContextProvider = ({ children }) => {
         await axiosClient.post("/api/auth/logout", { token: refreshToken });
       }
     } catch (error) {
-      // Optionally show error
+     
     }
 
     // Clear local storage
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
+    localStorage.removeItem("userRole");
 
     // Clear form
     setEmail("");
     setPassword("");
     setFullName("");
     setConfirmPassword("");
+
+    // Dispatch logout event to notify Router
+    window.dispatchEvent(new Event('logoutSuccess'));
 
     toast.success("Logged out successfully");
     navigate("/login");

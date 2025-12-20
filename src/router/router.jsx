@@ -1,27 +1,43 @@
-import React, { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AuthRouter from './AuthRouter'
 import GuestRouter from './GuestRouter'
 
 const Router = () => {
-  const [authenticated, setAuthenticated] = useState(false)
+  const [token, setToken] = useState(localStorage.getItem('accessToken'))
+  const navigate = useNavigate()
 
   useEffect(() => {
-    // For now you can create a fake token for testing:
-    // open the browser console and run:
-    // localStorage.setItem('token', 'fake-token')
-    //
-    // Or uncomment the next line to auto-create a fake token during dev:
-    // localStorage.setItem('token', 'fake-token')
-
-    const token = localStorage.getItem('token')
-    setAuthenticated(Boolean(token))
+    const storedToken = localStorage.getItem('accessToken')
+    setToken(storedToken)
   }, [])
 
-  return (
-    <Suspense fallback={<div className="p-4">Loading routes...</div>}>
-      {authenticated ? <AuthRouter /> : <GuestRouter />}
-    </Suspense>
-  )
+  useEffect(() => {
+    const handleAuthSuccess = (event) => {
+      const storedToken = localStorage.getItem('accessToken')
+      setToken(storedToken)
+
+      const redirectPath = event.detail?.redirectPath || '/admin-dashboard'
+      
+      setTimeout(() => {
+        navigate(redirectPath)
+      }, 0)
+    }
+
+    window.addEventListener('authSuccess', handleAuthSuccess)
+    return () => window.removeEventListener('authSuccess', handleAuthSuccess)
+  }, [navigate])
+
+  useEffect(() => {
+    const handleLogout = () => {
+      setToken(null)
+    }
+
+    window.addEventListener('logoutSuccess', handleLogout)
+    return () => window.removeEventListener('logoutSuccess', handleLogout)
+  }, [])
+
+  return token ? <AuthRouter /> : <GuestRouter />
 }
 
 export default Router

@@ -1,59 +1,78 @@
 "use client"
 
-import { Navbar } from "@/components/navbar"
-import { ProtectedRoute } from "@/components/protected-route"
-import { Button } from "@/components/ui/button"
-import { BarChart3, PlusCircle, Eye, MessageSquare, TrendingUp } from "lucide-react"
-import Link from "next/link"
+import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
+import { Button } from "../../../components/ui/button"
+import { BarChart3, PlusCircle, Eye, Loader } from "lucide-react"
+import { useBlogContext } from "../context/useBlogContext"
 
 export default function AuthorDashboard() {
+  const { authorBlogs, loading } = useBlogContext()
+  const [recentPosts, setRecentPosts] = useState([])
+  const [userName, setUserName] = useState("")
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"))
+    if (user?.name) {
+      setUserName(user.name)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (authorBlogs && authorBlogs.length > 0) {
+      const sortedPosts = [...authorBlogs]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5)
+      setRecentPosts(sortedPosts)
+    }
+  }, [authorBlogs])
+
   const stats = [
-    { label: "Total Posts", value: "24", icon: BarChart3, trend: "+12%" },
-    { label: "Total Views", value: "8,234", icon: Eye, trend: "+23%" },
-    { label: "Engagement", value: "3.2%", icon: MessageSquare, trend: "+5%" },
-    { label: "Growth", value: "1.2K", icon: TrendingUp, trend: "+18%" },
+    { label: "Total Posts", value: authorBlogs?.length || 0, icon: BarChart3 },
   ]
 
-  const recentPosts = [
-    { id: 1, title: "Getting Started with React Hooks", date: "2024-01-15", views: 1240 },
-    { id: 2, title: "Advanced TypeScript Patterns", date: "2024-01-12", views: 892 },
-    { id: 3, title: "Web Performance Optimization", date: "2024-01-10", views: 567 },
-  ]
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex items-center justify-center min-h-96">
+        <Loader className="animate-spin h-8 w-8 text-primary" />
+      </div>
+    )
+  }
 
   return (
-    <ProtectedRoute requiredRole="author">
-      <div className="min-h-screen bg-background">
-        <Navbar />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {/* Header */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex justify-between items-center mb-12">
             <div>
               <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
-              <p className="text-muted-foreground">Welcome back! Here's your publishing overview.</p>
+              <p className="text-muted-foreground">
+                Welcome back, {userName}! Here's your publishing overview.
+              </p>
             </div>
-            <Link href="/author/posts/create">
+            <Link to="/create-post">
               <Button className="gradient-accent text-white gap-2">
                 <PlusCircle size={20} /> New Post
               </Button>
             </Link>
           </div>
 
-          {/* Stats Grid */}
           <div className="grid md:grid-cols-4 gap-6 mb-12">
             {stats.map((stat) => (
               <div key={stat.label} className="bg-card border border-border rounded-xl p-6 glass">
-                <div className="flex justify-between items-start mb-4">
-                  <stat.icon className="text-accent" size={24} />
-                  <span className="text-sm text-green-400">{stat.trend}</span>
-                </div>
+                <stat.icon className="text-accent mb-4" size={24} />
                 <p className="text-muted-foreground text-sm mb-1">{stat.label}</p>
                 <p className="text-3xl font-bold">{stat.value}</p>
               </div>
             ))}
           </div>
 
-          {/* Analytics Chart */}
           <div className="bg-card border border-border rounded-xl p-8 glass mb-12">
             <h2 className="text-xl font-bold mb-6">Monthly Views</h2>
             <div className="h-64 bg-gradient-to-b from-primary/10 to-accent/5 rounded-lg flex items-end justify-around px-6 py-8">
@@ -71,33 +90,44 @@ export default function AuthorDashboard() {
             </div>
           </div>
 
-          {/* Recent Posts */}
           <div className="bg-card border border-border rounded-xl p-8 glass">
             <h2 className="text-xl font-bold mb-6">Recent Posts</h2>
-            <div className="space-y-4">
-              {recentPosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="flex justify-between items-center p-4 bg-background/50 rounded-lg border border-border hover:border-primary/30 transition"
-                >
-                  <div>
-                    <p className="font-semibold">{post.title}</p>
-                    <p className="text-sm text-muted-foreground">{post.date}</p>
+            {recentPosts.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">You haven't published any posts yet</p>
+                <Link to="/create-post">
+                  <Button className="gradient-accent text-white gap-2">
+                    <PlusCircle size={20} /> Create Your First Post
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentPosts.map((post) => (
+                  <div
+                    key={post._id}
+                    className="flex justify-between items-center p-4 bg-background/50 rounded-lg border border-border hover:border-primary/30 transition"
+                  >
+                    <div className="flex-1">
+                      <p className="font-semibold line-clamp-1">{post.title}</p>
+                      <p className="text-sm text-muted-foreground">{formatDate(post.createdAt)}</p>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <span className="text-sm text-muted-foreground flex items-center gap-2">
+                        <Eye size={16} />
+                        {post.views || 0}
+                      </span>
+                      <Link to="/author-posts">
+                        <Button variant="outline" size="sm">
+                          View Posts
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-6">
-                    <span className="text-sm text-muted-foreground">{post.views} views</span>
-                    <Link href={`/author/posts/edit/${post.id}`}>
-                      <Button variant="outline" size="sm">
-                        Edit
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      </div>
-    </ProtectedRoute>
   )
 }

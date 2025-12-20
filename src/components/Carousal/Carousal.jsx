@@ -11,7 +11,7 @@ const Carousal = () => {
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 border border-accent/20 rounded-full mb-6 text-sm text-accent">
               <Zap size={16} />
-              BlogHub 1.0 is live
+              MINDLOUGE 1.0 is live
             </div>
 
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 text-balance leading-tight">

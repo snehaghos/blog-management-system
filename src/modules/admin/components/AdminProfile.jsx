@@ -1,0 +1,310 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { Button } from "../../../components/ui/button"
+import { ArrowLeft, Loader, Upload } from "lucide-react"
+import axiosClient from "../../../lib/axios"
+import { toast } from "react-toastify"
+
+export default function AdminProfile() {
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [profile, setProfile] = useState(null)
+  const [imagePreview, setImagePreview] = useState("")
+  const [image, setImage] = useState(null)
+
+  // Form fields
+  const [address, setAddress] = useState("")
+  const [mobile, setMobile] = useState("")
+  const [permissions, setPermissions] = useState([])
+
+  const userId = JSON.parse(localStorage.getItem("user"))?._id
+
+  useEffect(() => {
+    if (userId) {
+      fetchProfile()
+    }
+  }, [userId])
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true)
+      const response = await axiosClient.get(`/api/profile/admin/${userId}`)
+      setProfile(response.data)
+      setAddress(response.data.address || "")
+      setMobile(response.data.mobile || "")
+      setPermissions(response.data.permissions || [])
+      if (response.data.profileImage) {
+        setImagePreview(`http://localhost:3000/uploads/${response.data.profileImage}`)
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error)
+      toast.error("Failed to load profile")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setImage(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removeImage = () => {
+    setImage(null)
+    setImagePreview("")
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    setSubmitting(true)
+
+    try {
+      const formData = new FormData()
+      if (address) formData.append("address", address)
+      if (mobile) formData.append("mobile", mobile)
+      if (permissions.length > 0) formData.append("permissions", JSON.stringify(permissions))
+      if (image) formData.append("profileImage", image)
+
+      const response = await axiosClient.put(`/api/profile/admin/${userId}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+
+      toast.success("Profile updated successfully!")
+      const updatedData = response.data.adminProfile
+      setProfile(updatedData)
+      
+      // Update form fields with new values
+      setAddress(updatedData.address || "")
+      setMobile(updatedData.mobile || "")
+      setPermissions(updatedData.permissions || [])
+      if (updatedData.profileImage) {
+        setImagePreview(`http://localhost:3000/uploads/${updatedData.profileImage}`)
+      }
+      
+      setImage(null)
+    } catch (error) {
+      console.error("Error updating profile:", error)
+      const errorMsg = error.response?.data?.message || "Failed to update profile"
+      toast.error(errorMsg)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader className="animate-spin h-8 w-8 text-primary" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => navigate("/admin-dashboard")}
+            className="flex items-center gap-2 text-primary hover:text-primary/80 mb-4"
+          >
+            <ArrowLeft size={20} />
+            Back to Dashboard
+          </button>
+          <h1 className="text-4xl font-bold">Admin Profile</h1>
+          <p className="text-muted-foreground mt-2">Manage your admin profile information</p>
+        </div>
+
+        {/* Profile Display Section */}
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          {/* Profile Card */}
+          <div className="md:col-span-3 lg:col-span-1">
+            <div className="bg-card border border-border rounded-lg p-6 text-center sticky top-20">
+              {imagePreview ? (
+                <img
+                  src={imagePreview}
+                  alt="Profile"
+                  className="w-32 h-32 mx-auto object-cover rounded-lg mb-4 border border-border"
+                />
+              ) : (
+                <div className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg mb-4 flex items-center justify-center">
+                  <span className="text-white text-3xl font-bold">
+                    {(profile?.userId?.name || "A").charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <h2 className="text-xl font-bold">{profile?.userId?.name}</h2>
+              <p className="text-sm text-muted-foreground">{profile?.userId?.email}</p>
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-xs text-muted-foreground mb-2">Status</p>
+                <p className="inline-block px-3 py-1 bg-green-500/20 text-green-600 text-sm rounded-full font-medium">
+                  Active
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Current Details */}
+          <div className="md:col-span-3 lg:col-span-2">
+            <div className="bg-card border border-border rounded-lg p-6 space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <span className="w-1 h-6 bg-primary rounded-full"></span>
+                  Account Information
+                </h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="p-3 bg-background rounded-lg border border-border/50">
+                    <p className="text-xs text-muted-foreground mb-1">Name</p>
+                    <p className="text-sm font-semibold">{profile?.userId?.name}</p>
+                  </div>
+                  <div className="p-3 bg-background rounded-lg border border-border/50">
+                    <p className="text-xs text-muted-foreground mb-1">Email</p>
+                    <p className="text-sm font-semibold">{profile?.userId?.email}</p>
+                  </div>
+                  <div className="p-3 bg-background rounded-lg border border-border/50">
+                    <p className="text-xs text-muted-foreground mb-1">Role</p>
+                    <p className="text-sm font-semibold capitalize">{profile?.userId?.role}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <span className="w-1 h-5 bg-primary rounded-full"></span>
+                  Admin Details
+                </h2>
+                <div className="space-y-3">
+                  {address && (
+                    <div className="p-3 bg-background rounded-lg border border-border/50">
+                      <p className="text-xs text-muted-foreground mb-1">Address</p>
+                      <p className="text-sm font-semibold">{address}</p>
+                    </div>
+                  )}
+                  {mobile && (
+                    <div className="p-3 bg-background rounded-lg border border-border/50">
+                      <p className="text-xs text-muted-foreground mb-1">Mobile Number</p>
+                      <p className="text-sm font-semibold">{mobile}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Edit Form Section */}
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="border-t border-border pt-12">
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+              <span className="w-1 h-7 bg-primary rounded-full"></span>
+              Edit Profile
+            </h2>
+          </div>
+
+          {/* Profile Image */}
+          <div>
+            <label className="block text-sm font-medium mb-3">Profile Picture</label>
+
+            {imagePreview && (
+              <div className="mb-4 relative inline-block">
+                <img
+                  src={imagePreview}
+                  alt="Profile"
+                  className="w-32 h-32 object-cover rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute top-2 right-2 bg-destructive text-white p-2 rounded-lg hover:bg-destructive/90"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+
+            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+                id="image-input"
+              />
+              <label htmlFor="image-input" className="cursor-pointer block">
+                <Upload size={32} className="mx-auto mb-2 text-muted-foreground" />
+                <p className="text-muted-foreground mb-1">Click to upload or drag and drop</p>
+                <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
+              </label>
+            </div>
+          </div>
+
+          {/* Admin Fields */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Admin Information</h3>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Address</label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Enter your address"
+                className="w-full px-4 py-2 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Mobile Number</label>
+              <input
+                type="tel"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                placeholder="Enter your mobile number"
+                className="w-full px-4 py-2 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-4 pt-8 border-t border-border">
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="gradient-accent text-white gap-2"
+            >
+              {submitting ? (
+                <>
+                  <Loader size={20} className="animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/admin-dashboard")}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
