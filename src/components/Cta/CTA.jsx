@@ -8,7 +8,7 @@ const CTA = () => (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-balance">Ready to start publishing?</h2>
           <p className="text-lg text-muted-foreground mb-8 text-balance">
-            Join thousands of creators building their business on BlogHub. It's free to get started.
+            Join thousands of creators building their business on MINDLOUGE. It's free to get started.
           </p>
           <Link to="/login">
             <Button size="lg" className="gradient-accent text-white gap-2">

@@ -1,20 +1,89 @@
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { Button } from "../ui/button"
 import { Moon, Sun, LogOut, Menu } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { toast } from "react-toastify"
+import axiosClient from "../../lib/axios"
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [theme, setTheme] = useState("dark")
+  const [theme, setTheme] = useState(() => {
+    // Initialize theme from localStorage or default to "dark"
+    return localStorage.getItem("theme") || "dark"
+  })
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const navigate = useNavigate()
   
-  // Mock auth - replace with your actual auth context
-  const isAuthenticated = false
-  const user = null
-  const logout = () => {}
+  // Get auth state from localStorage
+  const token = localStorage.getItem("accessToken")
+  const userRole = localStorage.getItem("userRole")
+  const userString = localStorage.getItem("user")
+  const user = userString ? JSON.parse(userString) : null
+  const isAuthenticated = !!token
+  
+  // Apply theme to document on mount and when theme changes
+  useEffect(() => {
+    const root = document.documentElement
+    if (theme === "light") {
+      root.classList.add("dark")
+    } else {
+      root.classList.remove("dark")
+    }
+    // Persist theme to localStorage
+    localStorage.setItem("theme", theme)
+  }, [theme])
   
   const toggleTheme = () => {
     setTheme(prev => prev === "dark" ? "light" : "dark")
-    document.documentElement.classList.toggle("dark")
+  }
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    const refreshToken = localStorage.getItem("refreshToken")
+
+    try {
+      if (refreshToken) {
+        await axiosClient.post("/api/auth/logout", { token: refreshToken })
+      }
+      
+      // Clear localStorage
+      localStorage.removeItem("accessToken")
+      localStorage.removeItem("refreshToken")
+      localStorage.removeItem("user")
+      localStorage.removeItem("userRole")
+
+      // Show success toast
+      toast.success("Logged out successfully!", {
+        autoClose: 2000,
+      })
+
+      // Dispatch logout event to update Router
+      window.dispatchEvent(new Event('logoutSuccess'))
+
+      // Small delay before redirect
+      setTimeout(() => {
+        navigate("/login")
+      }, 500)
+    } catch (error) {
+      console.error("Logout error:", error)
+      toast.error("Logout failed, but clearing local session", {
+        autoClose: 2000,
+      })
+      
+      // Still clear localStorage and redirect even if API fails
+      localStorage.removeItem("accessToken")
+      localStorage.removeItem("refreshToken")
+      localStorage.removeItem("user")
+      localStorage.removeItem("userRole")
+      
+      window.dispatchEvent(new Event('logoutSuccess'))
+      
+      setTimeout(() => {
+        navigate("/login")
+      }, 500)
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
 
   return (
@@ -25,34 +94,53 @@ export function Navbar() {
             to="/"
             className="flex items-center gap-2 font-bold text-xl gradient-accent bg-clip-text text-transparent"
           >
-            <div className="w-8 h-8 bg-linear-to-r from-primary to-accent rounded-lg"></div>
-            BlogHub
+           <img src="/images/logo.png"  width="350" alt="MINDLOUGE Logo" />
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
+            {!isAuthenticated && (
+              <>
+                <Link to="/blogs" className="text-sm hover:text-accent transition">
+                  Blogs
+                </Link>
+                <Link to="/about" className="text-sm hover:text-accent transition">
+                  About
+                </Link>
+                <Link to="/team" className="text-sm hover:text-accent transition">
+                  Team
+                </Link>
+              </>
+            )}
+            
             {isAuthenticated && user && (
               <>
-                {user.role === "author" && (
+                {userRole === "author" && (
                   <>
-                    <Link to="/author/dashboard" className="text-sm hover:text-accent transition">
+                    <Link to="/author-dashboard" className="text-sm hover:text-accent transition">
                       Dashboard
                     </Link>
-                    <Link to="/author/posts" className="text-sm hover:text-accent transition">
+                    <Link to="/author-posts" className="text-sm hover:text-accent transition">
                       Posts
                     </Link>
-                  </>
-                )}
-                {user.role === "admin" && (
-                  <>
-                    <Link to="/admin/dashboard" className="text-sm hover:text-accent transition">
-                      Admin
+                    <Link to="/create-post" className="text-sm hover:text-accent transition">
+                      Create Post
                     </Link>
                   </>
                 )}
-                {user.role === "user" && (
+                {userRole === "admin" && (
                   <>
-                    <Link to="/user/home" className="text-sm hover:text-accent transition">
-                      Explore
+                    <Link to="/admin-dashboard" className="text-sm hover:text-accent transition">
+                      Dashboard
+                    </Link>
+                  </>
+                )}
+                {userRole === "user" && (
+                  <>
+                    <Link to="/user-home" className="text-sm hover:text-accent transition">
+                      Home
+                    </Link>
+                    <Link to="/user-blogs" className="text-sm hover:text-accent transition">
+                      Blogs
                     </Link>
                   </>
                 )}
@@ -67,11 +155,42 @@ export function Navbar() {
 
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <img src={user?.avatar || "/placeholder.svg"} alt={user?.name} className="w-8 h-8 rounded-full" />
+                <button 
+                  onClick={() => {
+                    if (userRole === 'admin') {
+                      navigate('/admin-profile')
+                    } else if (userRole === 'author') {
+                      navigate('/author-profile')
+                    } else if (userRole === 'reader') {
+                      navigate('/reader-profile')
+                    }
+                  }}
+                  className="w-8 h-8 rounded-full overflow-hidden hover:opacity-80 transition flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500"
+                >
+                  {user?.profileImage ? (
+                    <img 
+                      src={user?.profileImage} 
+                      alt={user?.name || "Profile"} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white text-sm font-bold">
+                      {(user?.name || "U").charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </button>
                 <span className="hidden sm:inline text-sm">{user?.name}</span>
-                <Button size="sm" variant="outline" onClick={logout} className="gap-2 bg-transparent">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={handleLogout} 
+                  className="gap-2 bg-transparent"
+                  disabled={isLoggingOut}
+                >
                   <LogOut size={16} />
-                  <span className="hidden sm:inline">Logout</span>
+                  <span className="hidden sm:inline">
+                    {isLoggingOut ? "Logging out..." : "Logout"}
+                  </span>
                 </Button>
               </div>
             ) : (
@@ -90,26 +209,36 @@ export function Navbar() {
 
         {mobileMenuOpen && isAuthenticated && user && (
           <div className="md:hidden pb-4 space-y-2">
-            {user.role === "author" && (
+            {userRole === "author" && (
               <>
-                <Link to="/author/dashboard" className="block text-sm py-2 hover:text-accent">
+                <Link to="/author-dashboard" className="block text-sm py-2 hover:text-accent">
                   Dashboard
                 </Link>
-                <Link to="/author/posts" className="block text-sm py-2 hover:text-accent">
+                <Link to="/author-posts" className="block text-sm py-2 hover:text-accent">
                   Posts
+                </Link>
+                <Link to="/create-post" className="block text-sm py-2 hover:text-accent">
+                  Create Post
                 </Link>
               </>
             )}
-            {user.role === "admin" && (
-              <Link to="/admin/dashboard" className="block text-sm py-2 hover:text-accent">
-                Admin
+            {userRole === "admin" && (
+              <Link to="/admin-dashboard" className="block text-sm py-2 hover:text-accent">
+                Dashboard
               </Link>
             )}
-            {user.role === "user" && (
-              <Link to="/user/home" className="block text-sm py-2 hover:text-accent">
-                Explore
+            {userRole === "user" && (
+              <Link to="/user-home" className="block text-sm py-2 hover:text-accent">
+                Home
               </Link>
             )}
+            <button 
+              onClick={handleLogout}
+              className="block w-full text-left text-sm py-2 hover:text-accent text-red-400 disabled:opacity-50"
+              disabled={isLoggingOut}
+            >
+              {isLoggingOut ? "Logging out..." : "Logout"}
+            </button>
           </div>
         )}
       </div>

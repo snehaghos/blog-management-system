@@ -1,13 +1,28 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Loader } from "lucide-react";
 import useAuthContext from "../context/features/useAuthContext";
+import { toast } from "react-toastify";
 
 function Login() {
+
   const { email, setEmail, password, setPassword, handleLogin, isLoading } = useAuthContext();
-  const [role, setRole] = useState("user");
+  const [role, setRole] = useState("reader");
 
   const onSubmit = async (e) => {
-    await handleLogin(e);
+    e.preventDefault();
+    
+    if (!email || !password) {
+      toast.warning("Please enter both email and password");
+      return;
+    }
+    
+    if (!email.includes("@")) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    
+    await handleLogin(e, role);
   };
 
   return (
@@ -27,6 +42,7 @@ function Login() {
                 placeholder="you@example.com"
                 className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -39,6 +55,7 @@ function Login() {
                 placeholder="••••••••"
                 className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -48,8 +65,9 @@ function Login() {
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={isLoading}
               >
-                <option value="user">Reader / Public User</option>
+                <option value="reader">Reader / Public User</option>
                 <option value="author">Author</option>
                 <option value="admin">Admin</option>
               </select>
@@ -58,9 +76,16 @@ function Login() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full gradient-accent text-white font-semibold py-2 rounded-lg disabled:opacity-70"
+              className="w-full gradient-accent text-white font-semibold py-2 rounded-lg disabled:opacity-70 flex items-center justify-center gap-2"
             >
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? (
+                <>
+                  <Loader size={18} className="animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </button>
           </form>
 
